@@ -1,7 +1,7 @@
 import unittest
 
 from textnode import TextNode, text_type_bold, text_type_code, text_type_image, text_type_italic, text_type_link, text_type_text
-from main import text_node_to_html_node, split_nodes_delimiter
+from functions import text_node_to_html_node, split_nodes_delimiter
 from htmlnode import HTMLNode, LeafNode
 # To do
 # text_type_text = "text"

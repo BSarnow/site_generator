@@ -1,6 +1,8 @@
 from textnode import TextNode,text_type_bold, text_type_text,text_type_code, text_type_image, text_type_italic,text_type_link
 from htmlnode import LeafNode, ParentNode
 import re
+from pathlib import Path, PurePath
+import os
 # structur of a textNode:
 # def __init__(self,Text,Text_type,url=None):
 #        self.text = Text
@@ -91,8 +93,6 @@ def split_nodes_image(old_nodes):
                         new_nodes.append(TextNode(searching_text, text_type_text))                
     return new_nodes
         
-
-
 def split_nodes_links(old_nodes):
     new_nodes = []
     for node in old_nodes:
@@ -185,7 +185,7 @@ def markdown_to_htmlNode(markdown):
             block_typ = block_to_blocktyp(block)
             tags = typ_to_tags(block, block_typ)
             if tags in ["h1","h2","h3","h4","h5","h6"]:
-                striped_block = block.strip("#")
+                striped_block = block.strip("# ")
                 blocked_textnode = Text_to_textnodes(striped_block)
                 list_of_htmlnode = []
                 for textnode in blocked_textnode:
@@ -204,9 +204,7 @@ def markdown_to_htmlNode(markdown):
                 list_of_textnodes = []
                 for line in splitted_block:
                     children_of_listitem= []
-                    text_listitem = str(line[1:])
-                    list_symbol = TextNode(line[0],text_type_text)
-                    children_of_listitem.append(text_node_to_html_node(list_symbol))
+                    text_listitem = str(line[1:]).strip()
                     blocked_textnode = Text_to_textnodes(text_listitem)
                     for textnode in blocked_textnode:
                         children_of_listitem.append(text_node_to_html_node(textnode))
@@ -218,7 +216,9 @@ def markdown_to_htmlNode(markdown):
                 splitted_block = block.split("\n")
                 list_of_html_nodes = []
                 for line in splitted_block:
-                    textnodes = Text_to_textnodes(line)
+                    splitted_line = line.split()
+                    removed_digit = line.replace(splitted_line[0], "").strip()
+                    textnodes = Text_to_textnodes(removed_digit)
                     children_of_listitem = []
                     for textnode in textnodes:
                         children_of_listitem.append(text_node_to_html_node(textnode))
@@ -237,11 +237,49 @@ def markdown_to_htmlNode(markdown):
                 splitted_block = block.split("\n")
                 children_of_the_quote = []
                 for line in splitted_block:
-                    textnodes = Text_to_textnodes(line)
+                    stripped_line = line[2:]
+                    textnodes = Text_to_textnodes(stripped_line)
                     for textnode in textnodes:
                         children_of_the_quote.append(text_node_to_html_node(textnode))
                 Quote_node = ParentNode(tags,children_of_the_quote)
                 markdown_html_nodes.append(Quote_node)
     final_node = ParentNode("div",markdown_html_nodes)
     return final_node
-    
+
+def extract_title(markdown):
+    splittet_markdown = markdown.split("\n")
+    for line in splittet_markdown:
+        if line.startswith("# "):
+            headline = line.strip("# ")
+            return headline
+    raise Exception("No title was found")
+
+def generate_page(from_path, template_path, dest_path):
+    print(f"Generating page form {from_path} to {dest_path} using {template_path}")
+    source = open(from_path)
+    template = open(template_path)
+    markdown_content = source.read()
+    template_content = template.read()
+    html_string = markdown_to_htmlNode(markdown_content).to_html()
+    title = extract_title(markdown_content)
+    template_with_title = template_content.replace("{{ Title }}", f"{title}")
+    template_with_content= template_with_title.replace("{{ Content }}", f"{html_string}")
+    source.close()
+    template.close()
+    page = open(dest_path, "a")
+    page.write(template_with_content)
+
+def generate_page_recursiv(dir_path_content, template_path, dest_dir_path):
+    content = os.listdir(dir_path_content)
+    for item in content:
+        splitted_item = item.split(".")
+        path_item = os.path.join(dir_path_content,item)
+        dest_path = os.path.join(dest_dir_path,f"{splitted_item[0]}.html")
+        if os.path.isfile(path_item):
+            print(dest_path)
+            generate_page(path_item, template_path, dest_path)
+        else:
+            new_dest_dir = os.path.join(dest_dir_path, item)
+            os.mkdir(new_dest_dir)
+            generate_page_recursiv(path_item, template_path, new_dest_dir)
+

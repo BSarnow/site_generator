@@ -1,5 +1,5 @@
 import unittest
-from functions import extract_markdown_links, extract_markdown_images, split_nodes_links, split_nodes_image, Text_to_textnodes, block_to_blocktyp, markdown_to_htmlNode
+from functions import extract_markdown_links, extract_markdown_images, split_nodes_links, split_nodes_image, Text_to_textnodes, block_to_blocktyp, markdown_to_htmlNode, extract_title
 from textnode import TextNode, text_type_bold, text_type_code, text_type_image, text_type_italic, text_type_link, text_type_text
 
 class Test_for_extraction(unittest.TestCase):
@@ -141,4 +141,40 @@ Thinks we have:
 """
         excepted_output = '<div><h4> This is the <b>headline</b> of the document</h4><p>thinks we need:</p><ol><li>1. an unorderd list</li><li>2. a <code>code</code></li><li>3. a paragraph</li><li>4. a orderd list</li><li>5. a headline</li><li>6. a quote</li></ol><blockquote>> "We need a quote"> "we need a list"> "we need <b>more</b> then one quote"</blockquote><pre><code>This should be enough for a code block</code></pre><p>Thinks we have:</p><ul><li>* a <b>headline</b></li><li>* a paragraph</li><li>* an orderd list</li><li>* a quote</li><li>* a code</li><li>- a paragraph</li><li>* an unorderd list</li></ul></div>'
         self.assertEqual(markdown_to_htmlNode(test_document).to_html(), excepted_output)
+
+class test_for_exctract_title(unittest.TestCase):
+    def test_normal_title(self):
+        print("test exctract_title normal")
+        test_markdown = """# This is the title
+        
+this is the rest of the document."""
+        excepted_output = "# This is the title"
+        self.assertEqual(extract_title(test_markdown), excepted_output)
+
+    def test_2_title(self):
+        print("test exctract_title 2 titles")
+        test_markdown = """# This is the title
+# This is a fake-title        
+this is the rest of the document."""
+        excepted_output = "# This is the title"
+        self.assertEqual(extract_title(test_markdown), excepted_output)
+    
+    def test_wrong_title(self):
+        print("test exctract_title 1. title is wrong")
+        test_markdown = """## This is the title
+# This is a fake-title
+this is the rest of the document."""
+        excepted_output = "# This is a fake-title"
+        self.assertEqual(extract_title(test_markdown), excepted_output)
+
+    def test_missing_title(self):
+        print("test exctract_title missing title")
+        with self.assertRaises(Exception) as content:
+            test_exception = """ no title """
+            extract_title(test_exception)
+        self.assertTrue("No title was found" in str(content.exception))
+
+if __name__ == "__main__":
+    unittest.main()
+
     
